@@ -152,6 +152,7 @@ public:
      */
     virtual auto Generalize(tf::Subflow& subflow) const -> std::unique_ptr<Expression>;
 
+    virtual auto GetParent() const -> const Expression& = 0;
     /**
      * Attempts to specialize this expression to a more specific expression.
      *
@@ -198,6 +199,9 @@ public:
     {
         return GetType() == T<Expression, Expression>::GetStaticType();
     }
+
+    virtual auto SetParent(std::unique_ptr<Expression> p) -> void = 0;
+    virtual auto SetParent(const Expression&) -> void = 0;
 
     /**
      * Simplifies this expression.

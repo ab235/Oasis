@@ -9,7 +9,7 @@
 
 namespace Oasis {
 
-template <template <IExpression> class DerivedT, IExpression OperandT>
+template <template <IExpression> class DerivedT, IExpression OperandT, IExpression ParentT=Expression>
 class UnaryExpression : public Expression {
 
     using DerivedSpecialized = DerivedT<OperandT>;
@@ -74,6 +74,11 @@ public:
         return op != nullptr;
     }
 
+    auto GetParent() const -> const ParentT&
+    {
+        return *parent;
+    }
+
     [[nodiscard]] auto StructurallyEquivalent(const Expression& other) const -> bool final
     {
         return this->GetType() == other.GetType();
@@ -93,6 +98,16 @@ public:
         }
     }
 
+    auto SetParent(const ParentT& p) -> void
+    {
+        this->parent = &p;
+    }
+
+    auto SetParent(std::unique_ptr<ParentT> p) -> void
+    {
+        this->parent = p;
+    }
+
     auto Substitute(const Expression& var, const Expression& val) -> std::unique_ptr<Expression> override
     {
         std::unique_ptr<Expression> right = ((GetOperand().Copy())->Substitute(var, val));
@@ -103,6 +118,7 @@ public:
 
 protected:
     std::unique_ptr<OperandT> op;
+    std::unique_ptr<ParentT> parent;
 };
 
 #define IMPL_SPECIALIZE_UNARYEXPR(DerivedT, OperandT)                                           \

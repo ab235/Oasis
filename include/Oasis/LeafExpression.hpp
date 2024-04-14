@@ -16,7 +16,7 @@ namespace Oasis {
  *
  * @tparam DerivedT The type of the derived class.
  */
-template <typename DerivedT>
+template <typename DerivedT, typename ParentT=Expression>
 class LeafExpression : public Expression {
 public:
     [[nodiscard]] auto Copy() const -> std::unique_ptr<Expression> final
@@ -27,6 +27,11 @@ public:
     auto Copy(tf::Subflow&) const -> std::unique_ptr<Expression> final
     {
         return std::make_unique<DerivedT>(*static_cast<const DerivedT*>(this));
+    }
+
+    auto GetParent() const -> const ParentT&
+    {
+        return *parent;
     }
 
     [[nodiscard]] auto StructurallyEquivalent(const Expression& other) const -> bool final
@@ -42,10 +47,22 @@ public:
     {
         return Generalize()->Differentiate(differentiationVariable);
     }
+
+    auto SetParent(std::unique_ptr<ParentT> p) -> void
+    {
+        this->parent = p;
+    }
+    auto SetParent(const ParentT& p) -> void
+    {
+        this->parent = &p;
+    }
+
     auto Substitute(const Expression&, const Expression&) -> std::unique_ptr<Expression> override
     {
         return this->Copy();
     }
+protected:
+    std::unique_ptr<ParentT> parent;
 };
 
 } // Oasis

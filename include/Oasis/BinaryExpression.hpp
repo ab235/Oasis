@@ -76,7 +76,7 @@ auto BuildFromVector(const std::vector<std::unique_ptr<Expression>>& ops) -> std
  * @tparam MostSigOpT The type of the most significant operand.
  * @tparam LeastSigOpT The type of the least significant operand.
  */
-template <template <IExpression, IExpression> class DerivedT, IExpression MostSigOpT = Expression, IExpression LeastSigOpT = MostSigOpT>
+template <template <IExpression, IExpression> class DerivedT, IExpression MostSigOpT = Expression, IExpression LeastSigOpT = MostSigOpT, IExpression ParentT = Expression>
 class BinaryExpression : public Expression {
 
     using DerivedSpecialized = DerivedT<MostSigOpT, LeastSigOpT>;
@@ -93,12 +93,14 @@ public:
         if (other.HasLeastSigOp()) {
             SetLeastSigOp(other.GetLeastSigOp());
         }
+        SetParent(nullptr);
     }
 
-    BinaryExpression(const MostSigOpT& mostSigOp, const LeastSigOpT& leastSigOp)
+    BinaryExpression(const MostSigOpT& mostSigOp, const LeastSigOpT& leastSigOp, ParentT* p=nullptr)
     {
         SetMostSigOp(mostSigOp);
         SetLeastSigOp(leastSigOp);
+        SetParent(p);
     }
 
     template <IExpression Op1T, IExpression Op2T, IExpression... OpsT>
@@ -119,6 +121,7 @@ public:
 
         SetLeastSigOp(generalized->GetLeastSigOp());
         SetMostSigOp(generalized->GetMostSigOp());
+        SetParent(nullptr);
     }
 
     [[nodiscard]] auto Copy() const -> std::unique_ptr<Expression> final
@@ -379,6 +382,11 @@ public:
         return *leastSigOp;
     }
 
+    auto GetParent() const -> const ParentT&
+    {
+        return *parent;
+    }
+
     /**
      * Gets whether this expression has a most significant operand.
      * @return True if this expression has a most significant operand, false otherwise.
@@ -397,6 +405,15 @@ public:
         return leastSigOp != nullptr;
     }
 
+    auto SetParent(const ParentT& p) -> void
+    {
+        this->parent = &p;
+    }
+
+    auto SetParent(std::unique_ptr<ParentT> p) -> void
+    {
+        this->parent = p;
+    }
     /**
      * \brief Sets the most significant operand of this expression.
      * \param op The operand to set.
@@ -408,6 +425,7 @@ public:
         } else {
             this->mostSigOp = std::make_unique<MostSigOpT>(op);
         }
+        this->mostSigOp->SetParent(this);
     }
 
     /**
@@ -421,7 +439,9 @@ public:
         } else {
             this->leastSigOp = std::make_unique<LeastSigOpT>(op);
         }
+        this->leastSigOp->SetParent(this);
     }
+
 
     template <typename T>
         requires IsAnyOf<T, MostSigOpT, Expression>
@@ -434,6 +454,7 @@ public:
         } else {
             this->mostSigOp = std::move(op);
         }
+        this->mostSigOp->SetParent(this);
     }
 
     template <typename T>
@@ -447,6 +468,7 @@ public:
         } else {
             this->leastSigOp = std::move(op);
         }
+        this->leastSigOp->SetParent(this);
     }
 
     template <typename T>
@@ -460,6 +482,7 @@ public:
         } else {
             this->mostSigOp = std::move(op);
         }
+        this->mostSigOp->SetParent(this);
     }
 
     template <typename T>
@@ -473,6 +496,7 @@ public:
         } else {
             this->leastSigOp = std::move(op);
         }
+        this->leastSigOp->SetParent(this);
     }
     auto Substitute(const Expression& var, const Expression& val) -> std::unique_ptr<Expression> override
     {
@@ -496,6 +520,7 @@ public:
 protected:
     std::unique_ptr<MostSigOpT> mostSigOp;
     std::unique_ptr<LeastSigOpT> leastSigOp;
+    std::unique_ptr<Expression> parent;
 };
 
 #define IMPL_SPECIALIZE(Derived, FirstOp, SecondOp)                                                                      \
