@@ -93,12 +93,17 @@ public:
         if (other.HasLeastSigOp()) {
             SetLeastSigOp(other.GetLeastSigOp());
         }
+        if (other.HasMod())
+        {
+            SetMod(other.GetMod());
+        }
     }
 
-    BinaryExpression(const MostSigOpT& mostSigOp, const LeastSigOpT& leastSigOp)
+    BinaryExpression(const MostSigOpT& mostSigOp, const LeastSigOpT& leastSigOp, const int m=1)
     {
         SetMostSigOp(mostSigOp);
         SetLeastSigOp(leastSigOp);
+        SetMod(m);
     }
 
     template <IExpression Op1T, IExpression Op2T, IExpression... OpsT>
@@ -177,7 +182,7 @@ public:
             mostSigOpMismatch = true;
         }
 
-        if (!mostSigOpMismatch && !leastSigOpMismatch) {
+        if (!mostSigOpMismatch && !leastSigOpMismatch && (GetMod() == otherBinaryGeneralized.GetMod())) {
             return true;
         }
 
@@ -214,6 +219,7 @@ public:
         if (this->leastSigOp) {
             generalized.SetLeastSigOp(*this->leastSigOp->Copy());
         }
+        generalized.SetMod(*currmod);
 
         return std::make_unique<DerivedGeneralized>(generalized);
     }
@@ -233,7 +239,7 @@ public:
                 generalized.SetLeastSigOp(*this->leastSigOp->Copy(sbf));
             });
         }
-
+        generalized.SetMod(*currmod);
         subflow.join();
 
         return std::make_unique<DerivedGeneralized>(generalized);
@@ -358,6 +364,11 @@ public:
             out.push_back(this->leastSigOp->Copy());
         }
     }
+    auto GetMod() const -> const int
+    {
+        assert(currmod != nullptr);
+        return *currmod;
+    }
 
     /**
      * Gets the most significant operand of this expression.
@@ -379,6 +390,11 @@ public:
         return *leastSigOp;
     }
 
+    [[nodiscard]] auto HasMod() const -> bool
+    {
+        return (*currmod) != 1;
+    }
+
     /**
      * Gets whether this expression has a most significant operand.
      * @return True if this expression has a most significant operand, false otherwise.
@@ -395,6 +411,12 @@ public:
     [[nodiscard]] auto HasLeastSigOp() const -> bool
     {
         return leastSigOp != nullptr;
+    }
+
+    auto SetMod(const int m) -> void
+    {
+        this->currmod = std::make_unique<int>();
+        *currmod = m;
     }
 
     /**
@@ -489,6 +511,7 @@ public:
 protected:
     std::unique_ptr<MostSigOpT> mostSigOp;
     std::unique_ptr<LeastSigOpT> leastSigOp;
+    std::unique_ptr<int> currmod;
 };
 
 #define IMPL_SPECIALIZE(Derived, FirstOp, SecondOp)                                                                      \
