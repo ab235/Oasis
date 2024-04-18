@@ -22,7 +22,7 @@ auto Add<Expression>::Simplify() const -> std::unique_ptr<Expression>
         const Real& firstReal = realCase->GetMostSigOp();
         const Real& secondReal = realCase->GetLeastSigOp();
 
-        return std::make_unique<Real>(((firstReal.GetValue() % GetMod()) + secondReal.GetValue()));
+        return std::make_unique<Real>(((firstReal.GetValue()) + secondReal.GetValue()));
     }
 
     if (auto zeroCase = Add<Real, Expression>::Specialize(simplifiedAdd); zeroCase != nullptr) {

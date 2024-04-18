@@ -51,7 +51,7 @@ auto Derivative<Expression>::Simplify() const -> std::unique_ptr<Expression>
 }
 auto Derivative<Expression>::ToString() const -> std::string
 {
-    return fmt::format("(d({})/d{})", mostSigOp->ToString(), leastSigOp->ToString());
+    return fmt::format("(d({})/d{})", leastSigOp->ToString(), mostSigOp->ToString());
 }
 auto Derivative<Expression>::Specialize(const Expression& other) -> std::unique_ptr<Derivative<Expression, Expression>>
 {
